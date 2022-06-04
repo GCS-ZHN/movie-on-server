@@ -1,0 +1,8 @@
+resource:
+  path: "."
+  type: "mp4,avi,m3u8,mp3"
+
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
