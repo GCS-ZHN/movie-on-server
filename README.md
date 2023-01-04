@@ -29,22 +29,46 @@ Password is SHA256:KFj5z6JkQNREqA==:b06mKeu9sJIR***3zn6yqaZHRzjuG6UWBo=
 
 ![login](fig/login.png)
 
+docker-compose部署如下：
+```yml
+version: '3'
+services:
+  movie:
+    image: openjdk:11
+    container_name: movie
+    volumes:
+      - /your/movie/resource/directory:/movie
+      - /movie/jar/file/directory:/app
+    ports:
+      - 8080:8080
+    restart: always
+    working_dir: /app
+    user: 1000:1000
+    command: |
+      java -jar movie.jar
+      --passwd=<generated passwd SHA string>
+      --resource.path=/movie
+      --server.port=8080
+      --server.address=0.0.0.0
+```
+
 ## 支持的视频
 - mp4
 - m3u8 HLS格式
 
 ## 视频转码脚本解释
-下列脚本依赖于ffmpeg工具，请预先安装。
-
-- make_m3u8.sh
-用于将mp4视频转码生成m3u8 HLS格式。后者更加适合大视频的观看。因为播放mp4时，需要等服务器先将视频全部加载到服务器内存中。大容量的mp4此时预先加载较慢。
+[video-utils.py](video-utils.py)脚本
+用于将mp4格式与m3u8 HLS格式的互相转换。
+后者更加适合大视频的观看。
+因为播放mp4时，需要等服务器先将视频全部加载到服务器内存中。大容量的mp4此时预先加载较慢。
 ```shell
-bash make_m3u8.sh 你的mp4文件路径
-bash make_m3u8.sh 你的包含mp4文件的目录（不递归）
+python video-utils.py . # 将当前目录的mp4转换为hls
+python video-utils.py . -Rr # 递归将当前目录及子目录的mp4转换为hls，并删除mp4文件
+python video-utils.py . -t m3u8 # 将hls转换为mp4
+python video-utils.py v.mp4 -o v/index.m3u8 # 将指定m mp4
+python video-utils.y input.hls/index.m3u8 # 输出为input.mp4
 ```
 
-- ts2mp4.sh
-用于将ts格式（m3u8 HLS的视频片段）转化为mp4。
 ```shell
 bash ts2mp4.sh 你的ts格式文件路径
 ```
