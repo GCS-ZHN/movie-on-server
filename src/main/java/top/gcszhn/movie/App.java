@@ -15,6 +15,8 @@
  */
 package top.gcszhn.movie;
 
+import java.io.File;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.SpringApplication;
@@ -29,7 +31,10 @@ import top.gcszhn.movie.security.ShaEncrypt;
 @ServletComponentScan
 public class App implements WebMvcConfigurer {
     public static ConfigurableApplicationContext context;
+    /**工作目录 */
+    public static String workDir;
     public static void main(String[] args) {
+        setWorkDir();
         SpringApplication application = new SpringApplication(App.class);
         application.addListeners(new ApplicationPidFileWriter("app.pid"));
         context = application.run(args);
@@ -44,5 +49,13 @@ public class App implements WebMvcConfigurer {
             System.out.println(String.format("Password is SHA256:%s:%s", salt, digest));
             System.exit(0);
         }
+    }
+    /**
+     * 配置项目目录，实际上Spring自身日志有该信息，但无法获取
+     */
+    public static void setWorkDir() {
+        workDir = App.class.getProtectionDomain().getCodeSource().getLocation().toString();
+        workDir = workDir.replaceFirst("^[^/]*file:", "").replaceFirst("!/BOOT-INF/classes!/", "");
+        workDir = new File(workDir).getParent();
     }
 }

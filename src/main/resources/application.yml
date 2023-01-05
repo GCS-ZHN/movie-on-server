@@ -6,3 +6,8 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+
+baidu:
+  client_id: QDLHCW3yN6ShuEiZsnXCibMA2zO6WSOR
+  client_secret: F7lNFueyyc8m9ZfhRklb3TAItBEcrSdt
+  redirect_uri: oob
