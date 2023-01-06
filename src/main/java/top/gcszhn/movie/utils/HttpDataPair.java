@@ -16,6 +16,8 @@ import java.io.IOException;
 public class HttpDataPair implements Closeable {
     HttpRequestBase request;
     CloseableHttpResponse response;
+    HttpClientUtils client;
+    boolean closeClient = false;
 
     @Override
     public void close() throws IOException {
@@ -25,6 +27,9 @@ public class HttpDataPair implements Closeable {
         }
         if (request != null) {
             request.releaseConnection();
+        }
+        if (client != null && closeClient) {
+            client.close();
         }
         LogUtils.printMessage("关闭连接" + request.getURI(), LogUtils.Level.DEBUG);
     }

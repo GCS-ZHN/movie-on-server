@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
@@ -17,7 +16,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -148,6 +146,7 @@ public class HttpClientUtils implements Closeable {
             HttpDataPair dataPair = new HttpDataPair();
             dataPair.setRequest(request);
             dataPair.setResponse(httpClient.execute(request));
+            dataPair.setClient(this);
             dataPair = doRedirects(dataPair);
             return dataPair;
         } catch (Exception e) {
@@ -300,13 +299,7 @@ public class HttpClientUtils implements Closeable {
                     LogUtils.printMessage("HTTP request failed: " + response.getStatusLine(), LogUtils.Level.ERROR);
     
                 } else {
-                    HttpEntity entity = response.getEntity();
-                    byte[] buffer = new byte[1024];
-                    InputStream inputStream = entity.getContent();
-                    int len;
-                    while((len=inputStream.read(buffer))!=-1) {
-                        fos.write(buffer, 0, len);
-                    }
+                    response.getEntity().writeTo(fos);
                 }
             }
             LogUtils.printMessage("Saved to " + file.getCanonicalPath());
