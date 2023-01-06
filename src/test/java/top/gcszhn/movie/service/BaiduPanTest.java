@@ -1,9 +1,13 @@
 package top.gcszhn.movie.service;
 
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import org.apache.http.client.utils.HttpClientUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +17,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import top.gcszhn.movie.utils.LogUtils;
+
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -20,11 +26,40 @@ public class BaiduPanTest {
     @Autowired
     BaiduPanService baiduPanService;
 
-    private String code = "3e0e08eb995081d6d8ecbd31ad853fda";
-    private String accessToken = "121.a256dc8e81e06d159eac183d9b8ea5ea.YGwCNdp6X-oIHOAGICjgiF8z7PcRDQ6NGe5fN-p.0CfZBg";
-    private String refreshToken = "122.a83ccb47216e71e371d34a7b3965f274.Y5_YLWZrIHhAXh8jV3q36JjxquZGbC468Y02UNw.IxYNkA";
-    private String fsIds = "[424916916046646]";
-    private String dlink = "https://d.pcs.baidu.com/file/6d8400216t84ffd76ebd769f58cefc59?fid=1193395696-250528-906289219587990&rt=pr&sign=FDtAERV-DCb740ccc5511e5e8fedcff06b081203-obGk3FazFZGk8QuneqyZPxd27%2Fw%3D&expires=8h&chkbd=0&chkv=3&dp-logid=3691441786451200670&dp-callid=0&dstime=1672926667&r=465493077&origin_appid=29530371&file_type=0";
+    static class Param {
+        public String code = "";
+        public String accessToken = "";
+        public String refreshToken = "";
+        public JSONArray fsIds = new JSONArray();
+        public String dlink = "";
+        public String dir = "";
+        public String hlsDir = "";
+    }
+
+    Param param;
+
+    @Before
+    public void loadParams() {
+        LogUtils.printMessage("Loading params...");
+        // load param from test_params.json file
+        try (FileInputStream fis = new FileInputStream("test_params.json")) {
+            this.param = JSONObject.parseObject(fis, Param.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void saveParams() {
+        LogUtils.printMessage("Saving params...");
+        // save param to test_params.json file, include null value
+        try (FileWriter fw = new FileWriter("test_params.json")) {
+            fw.write(JSONObject.toJSONString(param, true));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Test
     public void testAuthorize() {
         try {
@@ -36,33 +71,45 @@ public class BaiduPanTest {
 
     @Test
     public void testGetAccessToken() throws IOException {
-        JSONObject response = baiduPanService.getAccessToken(code);
-        System.out.println(response.getString("access_token"));
-        System.out.println(response.getString("refresh_token"));
+        if (param.code == null) {
+            LogUtils.printMessage("Please set code!");
+        } else {
+            JSONObject response = baiduPanService.getAccessToken(param.code);
+            System.out.println("access_token: " + response.getString("access_token"));
+            System.out.println("refresh_token: " + response.getString("refresh_token"));
+            param.accessToken = response.getString("access_token");
+            param.refreshToken = response.getString("refresh_token");
+            param.code = null;
+        }
     }
 
     @Test
     public void testRefreshToken() throws IOException {
-        JSONObject response = baiduPanService.refreshToken(refreshToken);
-        System.out.println(response.getString("access_token"));
+        JSONObject response = baiduPanService.refreshToken(param.refreshToken);
+        System.out.println("access_token: " + response.getString("access_token"));
+        System.out.println("refresh_token: " + response.getString("refresh_token"));
+        param.accessToken = response.getString("access_token");
+        param.refreshToken = response.getString("refresh_token");
     }
 
     @Test
     public void testGetUserInfo() throws IOException {
-        JSONObject response = baiduPanService.getUserInfo(accessToken);
-        System.out.println(response.getString("baidu_name"));
+        JSONObject response = baiduPanService.getUserInfo(param.accessToken);
+        response.forEach((key, value) -> {
+            System.out.println(key + ": " + value);
+        });
     }
 
     @Test
     public void testGetFileList() throws IOException {
         JSONArray FileList = baiduPanService.getFileList(
-            accessToken,
-            "/我的资源/movie",
+            param.accessToken,
+            param.dir,
             false);
 
         FileList.forEach(file -> {
             JSONObject fileJson = (JSONObject) file;
-            System.out.println(fileJson.getString("server_filename"));
+            System.out.print(fileJson.getString("server_filename") + "\t");
             System.out.println(fileJson.getString("fs_id"));
         });
     }
@@ -70,13 +117,13 @@ public class BaiduPanTest {
     @Test
     public void testGetFileMetaInfoByIds() throws IOException {
         JSONArray response = baiduPanService.getFileMetaInfoByIds(
-            accessToken,
-            JSONArray.parseArray(fsIds),
+            param.accessToken,
+            param.fsIds,
             true);
         response.forEach(file -> {
             JSONObject fileJson = (JSONObject) file;
-            System.out.println(fileJson.getString("filename"));
-            System.out.print((fileJson.getIntValue("isdir")==1? "dir" : "file") + " ");
+            System.out.print(fileJson.getString("filename") + "\t");
+            System.out.print((fileJson.getIntValue("isdir")==1? "dir" : "file") + "\t");
             System.out.println(fileJson.getString("dlink"));
         });
     }
@@ -84,39 +131,39 @@ public class BaiduPanTest {
     @Test
     public void testGetFileMetaInfoByDir() throws IOException {
         JSONArray response = baiduPanService.getFileMetaInfoByDir(
-            accessToken,
-            "/我的资源/movie/",
+            param.accessToken,
+            param.dir,
             true);
         response.forEach(file -> {
             JSONObject fileJson = (JSONObject) file;
-            System.out.print(fileJson.getString("filename") + " ");
-            System.out.print((fileJson.getIntValue("isdir")==1? "dir" : "file") + " ");
+            System.out.print(fileJson.getString("filename") + "\t");
+            System.out.print((fileJson.getIntValue("isdir")==1? "dir" : "file") + "\t");
             System.out.println(fileJson.getString("dlink"));
         });
     }
 
     @Test
-    public void testDownloadFile() throws IOException {
-        baiduPanService.downloadFile(dlink, accessToken, "68756b_0000.ts");
+    public void testDownloadFile() throws IOException, URISyntaxException {
+        baiduPanService.downloadFile(param.accessToken, param.dlink, "v.m3u8");
     }
 
     @Test
     public void testGetOnlyFiles() throws IOException {
         JSONArray files = baiduPanService.getOnlyFiles(
-            accessToken,
-            "/我的资源/movie/舒淇-洗澡.hls");
+            param.accessToken,
+            param.dir);
         files.forEach(file -> {
             JSONObject fileJson = (JSONObject) file;
-            System.out.print(fileJson.getString("server_filename") + " ");
+            System.out.print(fileJson.getString("server_filename") + "\t");
             System.out.println(fileJson.getString("fs_id"));
         });
     }
 
     @Test
-    public void convertHLSFile() throws IOException {
+    public void convertHLSFile() throws IOException, URISyntaxException {
         JSONArray response = baiduPanService.getFileMetaInfoByDir(
-            accessToken,
-            "/我的资源/movie/v.hls",
+            param.accessToken,
+            param.hlsDir,
             true);
         JSONObject fileDlinks = new JSONObject();
         String m3u8file= null;
@@ -131,15 +178,20 @@ public class BaiduPanTest {
             }
         }
         if (m3u8file != null) {
-            String m3u8 = baiduPanService.getFileText(fileDlinks.getString(m3u8file), accessToken);
+            LogUtils.printMessage("m3u8 file: " + m3u8file);
+            String m3u8 = baiduPanService.getFileText(param.accessToken, fileDlinks.getString(m3u8file));
+            if (m3u8 == null) {
+                LogUtils.printMessage("Fetch m3u8 file failed!");
+                return;
+            }
             String[] lines = m3u8.split("\n");
-            try (FileWriter writer = new FileWriter("v.m3u8")) {
+            try (FileWriter writer = new FileWriter("converted.m3u8")) {
                 for (String line : lines) {
                     if (line.startsWith("#")) {
                         writer.write(line + "\n");
                         continue;
                     }
-                    String link = fileDlinks.getString(line) + "&access_token=" + accessToken;
+                    String link = fileDlinks.getString(line) + "&access_token=" + param.accessToken;
                     writer.write(link + "\n");
                 }
             } catch (IOException e) {

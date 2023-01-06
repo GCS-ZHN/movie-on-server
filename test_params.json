@@ -1,0 +1,12 @@
+{
+	"accessToken":"121.62f63b3325d25eff97930aaf6b7046b1.YQlJoAsvVoIJ1PKfJj1v1jAcq2S4NWZHa1KznIn.6tG7uA",
+	"code":"",
+	"dir":"/我的资源/movie",
+	"dlink":"https://d.pcs.baidu.com/file/cd052885et71b08de626af0e3e680777?fid=1193395696-250528-688470363860000&rt=pr&sign=FDtAERV-DCb740ccc5511e5e8fedcff06b081203-e%2BVmzq6ZCjZRyyI4G8kaktRTkeg%3D&expires=8h&chkbd=0&chkv=3&dp-logid=1190263740261979025&dp-callid=0&dstime=1672987554&r=259596311&origin_appid=29530371&file_type=0",
+	"fsIds":[
+		424916916046646,
+		688470363860000
+	],
+	"hlsDir":"/我的资源/movie/v.hls",
+	"refreshToken":"122.f0e9a11b1d5eca5040269e628029841f.YDYqsFDlaufR778rGCFBktCl2arVCjMNa3D4r65.pgqRyQ"
+}

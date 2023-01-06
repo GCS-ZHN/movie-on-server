@@ -18,6 +18,8 @@ import java.util.List;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
@@ -292,14 +294,19 @@ public class HttpClientUtils implements Closeable {
                 case POST:dataPair = doPost(url, headers); break;
                 default:throw new UnsupportedOperationException("Only support GET/POST currently");
             }
-
             if (dataPair != null && dataPair.getResponse() != null) {
-                HttpEntity entity = dataPair.getResponse().getEntity();
-                byte[] buffer = new byte[1024];
-                InputStream inputStream = entity.getContent();
-                int len;
-                while((len=inputStream.read(buffer))!=-1) {
-                    fos.write(buffer, 0, len);
+                HttpResponse response = dataPair.getResponse();
+                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                    LogUtils.printMessage("HTTP request failed: " + response.getStatusLine(), LogUtils.Level.ERROR);
+    
+                } else {
+                    HttpEntity entity = response.getEntity();
+                    byte[] buffer = new byte[1024];
+                    InputStream inputStream = entity.getContent();
+                    int len;
+                    while((len=inputStream.read(buffer))!=-1) {
+                        fos.write(buffer, 0, len);
+                    }
                 }
             }
             LogUtils.printMessage("Saved to " + file.getCanonicalPath());
@@ -323,7 +330,12 @@ public class HttpClientUtils implements Closeable {
     public String getTextContent(HttpDataPair dataPair){
         try {
             if (dataPair != null && dataPair.getResponse() != null) {
-                String data = EntityUtils.toString(dataPair.getResponse().getEntity());
+                HttpResponse response = dataPair.getResponse();
+                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                    LogUtils.printMessage("HTTP request failed: " + response.getStatusLine(), LogUtils.Level.ERROR);
+                    return null;
+                }
+                String data = EntityUtils.toString(response.getEntity());
                 return data;
             }
         } catch (Exception e) {
