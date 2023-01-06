@@ -1,6 +1,7 @@
 resource:
-  path: "."
+  path: /我的资源/movie
   type: "mp4,avi,m3u8,mp3"
+  backend: baidupan
 
 spring:
   mvc:

@@ -17,6 +17,10 @@ package top.gcszhn.movie;
 
 import lombok.Getter;
 import lombok.Setter;
+import top.gcszhn.movie.service.BaiduPanResourceService;
+import top.gcszhn.movie.service.LocalResourceService;
+import top.gcszhn.movie.service.ResourceService;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.context.EnvironmentAware;
@@ -45,13 +49,19 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
     @Value("#{'${resource.type:mp4}'.split(',')}")
     private @Getter List<String> resourceType;
 
+    /**资源后端 */
+    @Value("${resource.backend:local}")
+    private @Getter String resourceBackend;
+
     /**
      * 建立资源映射
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         try {
-            registry.addResourceHandler("/static/**").addResourceLocations(Paths.get(new File(getResourcePath()).getCanonicalPath()).toUri().toString());
+            if (getResourceBackend().equals("local"))
+                registry.addResourceHandler("/static/**").addResourceLocations(
+                    Paths.get(new File(getResourcePath()).getCanonicalPath()).toUri().toString());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -59,7 +69,28 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
 
     @Override
     public void setEnvironment(Environment environment) {
-         setResourcePath(environment.getProperty("resource.path", "."));
+        switch (getResourceBackend()) {
+            case "local":
+                setResourcePath(environment.getProperty("resource.path", "."));
+                break;
+            case "baidupan":
+                setResourcePath(environment.getProperty("resource.path", "/"));
+                break;
+            default:
+                throw new RuntimeException("未知的资源后端");
+        }
+    }
+
+    @Bean
+    public ResourceService movieService() {
+        switch (getResourceBackend()) {
+            case "local":
+                return new LocalResourceService();
+            case "baidupan":
+                return new BaiduPanResourceService();
+            default:
+                throw new RuntimeException("未知的资源后端");
+        }
     }
 
     /**

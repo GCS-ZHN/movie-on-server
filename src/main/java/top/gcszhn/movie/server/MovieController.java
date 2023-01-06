@@ -16,28 +16,35 @@
 package top.gcszhn.movie.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import top.gcszhn.movie.AppConfig;
-import top.gcszhn.movie.AppUtils;
+import top.gcszhn.movie.service.ResourceService;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.text.SimpleDateFormat;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.*;
 
 
 @RestController
-public class MovieListController {
+public class MovieController {
     @Autowired
     AppConfig config;
 
+    @Autowired  
+    HttpServletRequest request;
+
     @Autowired
     HttpServletResponse response;
+
+    @Autowired
+    ResourceService movieService;
 
     /**
      * 获取电影列表
@@ -47,31 +54,26 @@ public class MovieListController {
      */
     @GetMapping("query/movies")
     public List<Map<String, String>> getMovies(@RequestParam String target) throws IOException {
-        List<Map<String, String>> movies = new ArrayList<>();
+        if (config.getResourceBackend().equals("baidupan")) {
+            String token = "121.abdd85946ef7cd33afe4b2bf8e911c11.YgJH9i9PdKPKDxaL9GWYhfvwtZOOi1nu4Qrj0s8.T7KB9g";
+            target = token + ":" + target;
+        }
+        return movieService.getResourceList(target, config.getResourcePath(), config.getResourceType());
+    }
 
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd HH:mm:sss");
-        final File dir = new File(config.getResourcePath(), target);
-        if (!dir.exists() || !dir.isDirectory()) {
-            return movies;
+    /**
+     * 返回资源流
+     * @param target 目标文件
+     * @throws IOException IO异常
+     * @throws URISyntaxException
+     */
+    @GetMapping("/stream/**")
+    public ResponseEntity<InputStreamResource> fetchResourceStream() throws IOException, URISyntaxException {
+        String target = URLDecoder.decode(request.getRequestURI(), AppConfig.DEFAULT_CHARSET).replace("/stream", "");
+        if (config.getResourceBackend().equals("baidupan")) {
+            String token = "121.abdd85946ef7cd33afe4b2bf8e911c11.YgJH9i9PdKPKDxaL9GWYhfvwtZOOi1nu4Qrj0s8.T7KB9g";
+            target = token + ":" + target;
         }
-        for (File pathname: dir.listFiles()) {
-            boolean hidden = pathname.getName().startsWith(".");
-            boolean flag = pathname.isDirectory() && !hidden;
-            for (String type: config.getResourceType()) {
-                if (pathname.getName().toLowerCase().endsWith("." + type) && !hidden) {
-                    flag = true;
-                    break;
-                }
-            }
-            if (flag) {
-                Map<String, String> fileInfo = new HashMap<>();
-                fileInfo.put("name", pathname.getName());
-                fileInfo.put("type", pathname.isDirectory() ? "directory": "file");
-                fileInfo.put("create", dateFormat.format(Files.readAttributes(pathname.toPath(), BasicFileAttributes.class).creationTime().toMillis()));
-                fileInfo.put("size", AppUtils.readableFileSize(pathname.length()));
-                movies.add(fileInfo);
-            }
-        }
-        return movies;
+        return movieService.getResourceStream(target, config.getResourcePath());
     }
 }
