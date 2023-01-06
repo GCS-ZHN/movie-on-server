@@ -1,12 +1,13 @@
 {
-	"accessToken":"121.62f63b3325d25eff97930aaf6b7046b1.YQlJoAsvVoIJ1PKfJj1v1jAcq2S4NWZHa1KznIn.6tG7uA",
+	"accessToken":"121.abdd85946ef7cd33afe4b2bf8e911c11.YgJH9i9PdKPKDxaL9GWYhfvwtZOOi1nu4Qrj0s8.T7KB9g",
 	"code":"",
-	"dir":"/我的资源/movie",
-	"dlink":"https://d.pcs.baidu.com/file/cd052885et71b08de626af0e3e680777?fid=1193395696-250528-688470363860000&rt=pr&sign=FDtAERV-DCb740ccc5511e5e8fedcff06b081203-e%2BVmzq6ZCjZRyyI4G8kaktRTkeg%3D&expires=8h&chkbd=0&chkv=3&dp-logid=1190263740261979025&dp-callid=0&dstime=1672987554&r=259596311&origin_appid=29530371&file_type=0",
+	"dir":"/我的资源/movie/",
+	"dlink":"https://d.pcs.baidu.com/file/0a8a4dbe5m2aa9ea99020c1ceb666e7e?fid=1193395696-250528-1017715452444120&rt=pr&sign=FDtAERV-DCb740ccc5511e5e8fedcff06b081203-zZSbTMPXMmpBuEEMUQGO35e51cE%3D&expires=8h&chkbd=0&chkv=3&dp-logid=2802531765334914936&dp-callid=0&dstime=1673003678&r=922327892&origin_appid=29530371&file_type=0",
 	"fsIds":[
 		424916916046646,
 		688470363860000
 	],
 	"hlsDir":"/我的资源/movie/v.hls",
-	"refreshToken":"122.f0e9a11b1d5eca5040269e628029841f.YDYqsFDlaufR778rGCFBktCl2arVCjMNa3D4r65.pgqRyQ"
+	"hlsPath":"/我的资源/movie/v.hls/eab66d_0000.ts",
+	"refreshToken":"122.663dfcf96b03cac2baed520e3922883e.Y3mPlieW7KdwC_taFjalEifBoKFWROboZSAapwD.jMPg2Q"
 }

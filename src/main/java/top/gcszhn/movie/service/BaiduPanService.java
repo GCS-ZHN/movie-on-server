@@ -16,6 +16,7 @@ import com.alibaba.fastjson.JSONObject;
 
 import top.gcszhn.movie.AppConfig;
 import top.gcszhn.movie.utils.HttpClientUtils;
+import top.gcszhn.movie.utils.HttpDataPair;
 import top.gcszhn.movie.utils.LogUtils;
 
 @Service
@@ -159,6 +160,30 @@ public class BaiduPanService {
                 path, 
                 new URIBuilder(dlink, AppConfig.DEFAULT_CHARSET).addParameters(param).build().toString());
         }
+    }
+
+    public HttpDataPair getFile(String accessToken, String dlink) throws IOException, URISyntaxException {
+        HttpClientUtils client = new HttpClientUtils();
+        List<NameValuePair> param = List.of(
+            new BasicNameValuePair("access_token", accessToken)
+        );
+        String uri = new URIBuilder(dlink, AppConfig.DEFAULT_CHARSET).addParameters(param).build().toString();
+        HttpDataPair dataPair = client.doGet(uri); 
+        dataPair.setCloseClient(true);
+        return dataPair;
+    }
+
+    public HttpDataPair getFileByPath(String accessToken, String path) throws IOException, URISyntaxException {
+        String dir = path.substring(0, path.lastIndexOf("/") + 1);
+        String basename = path.substring(path.lastIndexOf("/") + 1);
+        JSONArray list = getFileMetaInfoByDir(accessToken, dir, true);
+        for (int i = 0; i < list.size(); i++) {
+            JSONObject file = list.getJSONObject(i);
+            if (file.getString("filename").equals(basename)) {
+                return getFile(accessToken, file.getString("dlink"));
+            }
+        }
+        return null;
     }
 
     public String getFileText(String accessToken, String dlink) throws IOException, URISyntaxException {

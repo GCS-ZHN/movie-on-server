@@ -1,11 +1,15 @@
 package top.gcszhn.movie.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import org.apache.http.client.utils.HttpClientUtils;
+import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,12 +21,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import top.gcszhn.movie.utils.HttpDataPair;
 import top.gcszhn.movie.utils.LogUtils;
 
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class BaiduPanTest {
+public class BaiduPanServiceTest {
     @Autowired
     BaiduPanService baiduPanService;
 
@@ -34,6 +39,7 @@ public class BaiduPanTest {
         public String dlink = "";
         public String dir = "";
         public String hlsDir = "";
+        public String hlsPath = "";
     }
 
     Param param;
@@ -144,7 +150,7 @@ public class BaiduPanTest {
 
     @Test
     public void testDownloadFile() throws IOException, URISyntaxException {
-        baiduPanService.downloadFile(param.accessToken, param.dlink, "v.m3u8");
+        baiduPanService.downloadFile(param.accessToken, param.dlink, "test_v.ts");
     }
 
     @Test
@@ -185,7 +191,7 @@ public class BaiduPanTest {
                 return;
             }
             String[] lines = m3u8.split("\n");
-            try (FileWriter writer = new FileWriter("converted.m3u8")) {
+            try (FileWriter writer = new FileWriter("test_converted.m3u8")) {
                 for (String line : lines) {
                     if (line.startsWith("#")) {
                         writer.write(line + "\n");
@@ -197,6 +203,37 @@ public class BaiduPanTest {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @Test
+    public void testGetFile() {
+        try {
+            HttpDataPair dataPair = baiduPanService.getFile(param.accessToken, param.dlink);
+            assertNotNull(dataPair);
+            assertEquals(HttpStatus.SC_OK, dataPair.getResponse().getStatusLine().getStatusCode());
+            try (FileOutputStream fos = new FileOutputStream("v1.ts"); dataPair) {
+                dataPair.getResponse().getEntity().writeTo(fos);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }   
+    }
+
+    @Test
+    public void testGetFileByPath() {
+        try {
+            HttpDataPair dataPair = baiduPanService.getFileByPath(param.accessToken, param.hlsPath);
+            assertNotNull(dataPair);
+            assertEquals(HttpStatus.SC_OK, dataPair.getResponse().getStatusLine().getStatusCode());
+            
+            try (FileOutputStream fos = new FileOutputStream(
+                param.hlsPath.substring(param.hlsPath.lastIndexOf("/")+1));
+                dataPair) {
+                dataPair.getResponse().getEntity().writeTo(fos);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
