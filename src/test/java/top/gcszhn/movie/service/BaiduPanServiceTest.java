@@ -3,14 +3,13 @@ package top.gcszhn.movie.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 
 import org.apache.http.HttpStatus;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,21 +45,11 @@ public class BaiduPanServiceTest {
 
     @Before
     public void loadParams() {
+        baiduPanService.setRedirectUrl("oob");
         LogUtils.printMessage("Loading params...");
         // load param from test_params.json file
-        try (FileInputStream fis = new FileInputStream("test_params.json")) {
+        try (InputStream fis = this.getClass().getResourceAsStream("/test_params.json")) {
             this.param = JSONObject.parseObject(fis, Param.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @After
-    public void saveParams() {
-        LogUtils.printMessage("Saving params...");
-        // save param to test_params.json file, include null value
-        try (FileWriter fw = new FileWriter("test_params.json")) {
-            fw.write(JSONObject.toJSONString(param, true));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -78,9 +67,14 @@ public class BaiduPanServiceTest {
     @Test
     public void testGetAccessToken() throws IOException {
         if (param.code == null) {
-            LogUtils.printMessage("Please set code!");
+            LogUtils.printMessage("请设置授权码!");
         } else {
             JSONObject response = baiduPanService.getAccessToken(param.code);
+            if (response==null) {
+                LogUtils.printMessage("无效授权码!");
+                return;
+            }
+            System.out.println("expires_in: " + response.getString("expires_in") + "s");
             System.out.println("access_token: " + response.getString("access_token"));
             System.out.println("refresh_token: " + response.getString("refresh_token"));
             param.accessToken = response.getString("access_token");
