@@ -1,5 +1,5 @@
 resource:
-  path: /我的资源/movie
+  path: /
   type: "mp4,avi,m3u8,mp3"
   backend: baidupan
 
@@ -8,7 +8,11 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher
 
-baidu:
+baidupan:
   client_id: QDLHCW3yN6ShuEiZsnXCibMA2zO6WSOR
   client_secret: F7lNFueyyc8m9ZfhRklb3TAItBEcrSdt
-  redirect_uri: oob
+  redirect_url: http://localhost:8080/auth
+
+server:
+  port: 8080
+  address: localhost
