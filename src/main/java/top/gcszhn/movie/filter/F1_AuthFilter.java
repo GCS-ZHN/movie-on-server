@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * 过滤未经授权登录的请求
  */
-@WebFilter(urlPatterns = {"/query/*", "/static/*"})
+@WebFilter(urlPatterns = {"/query/*", "/stream/*"})
 public class F1_AuthFilter extends HttpFilter {
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {

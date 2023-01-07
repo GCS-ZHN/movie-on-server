@@ -17,7 +17,10 @@ package top.gcszhn.movie;
 
 import lombok.Getter;
 import lombok.Setter;
+import top.gcszhn.movie.service.AuthService;
+import top.gcszhn.movie.service.BaiduPanAuthService;
 import top.gcszhn.movie.service.BaiduPanResourceService;
+import top.gcszhn.movie.service.LocalAuthService;
 import top.gcszhn.movie.service.LocalResourceService;
 import top.gcszhn.movie.service.ResourceService;
 
@@ -27,14 +30,10 @@ import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.List;
 
 @Configuration
@@ -52,20 +51,6 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
     /**资源后端 */
     @Value("${resource.backend:local}")
     private @Getter String resourceBackend;
-
-    /**
-     * 建立资源映射
-     */
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        try {
-            if (getResourceBackend().equals("local"))
-                registry.addResourceHandler("/static/**").addResourceLocations(
-                    Paths.get(new File(getResourcePath()).getCanonicalPath()).toUri().toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public void setEnvironment(Environment environment) {
@@ -88,6 +73,18 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
                 return new LocalResourceService();
             case "baidupan":
                 return new BaiduPanResourceService();
+            default:
+                throw new RuntimeException("未知的资源后端");
+        }
+    }
+
+    @Bean
+    public AuthService authService() {
+        switch (getResourceBackend()) {
+            case "local":
+                return new LocalAuthService();
+            case "baidupan":
+                return new BaiduPanAuthService();
             default:
                 throw new RuntimeException("未知的资源后端");
         }
