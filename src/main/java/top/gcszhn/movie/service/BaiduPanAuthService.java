@@ -17,7 +17,7 @@ public class BaiduPanAuthService implements AuthService {
     @Override
     public Map<String, String> auth(HttpSession session, Map<String, String> params) {
         String code = params.get("code");
-        if (code == null || code.isEmpty()) {
+        if (code == null || code.isEmpty() || session == null) {
             return Map.of("status", "2", "message", "非法请求");
         }
         try {

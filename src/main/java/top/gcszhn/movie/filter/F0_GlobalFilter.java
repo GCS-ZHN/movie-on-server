@@ -37,8 +37,12 @@ public class F0_GlobalFilter extends HttpFilter {
         // response.addHeader("Access-Control-Allow-Credentials", "true");
         // response.setHeader("Access-Control-Allow-Methods", "POST, GET, PATCH, DELETE, PUT");
         // response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, X-XSRF-TOKEN, Authorization");
+        String realIP = request.getHeader("X-Real-IP");
+        if (realIP == null || realIP.length() == 0 || "unknown".equalsIgnoreCase(realIP)) {
+            realIP = request.getRemoteAddr();
+        }
         LogUtils.printMessage(String.format("Request for %s from %s [%s]", 
-            request.getRequestURI(), request.getRemoteHost(), request.getRemoteAddr()));
+            request.getRequestURI(), request.getRemoteHost(), realIP));
         super.doFilter(request, response, chain);
     }
 }
