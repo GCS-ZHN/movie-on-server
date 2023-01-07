@@ -55,7 +55,7 @@ public class MovieController {
     @GetMapping("query/movies")
     public List<Map<String, String>> getMovies(@RequestParam String target) throws IOException {
         if (config.getResourceBackend().equals("baidupan")) {
-            String token = "121.abdd85946ef7cd33afe4b2bf8e911c11.YgJH9i9PdKPKDxaL9GWYhfvwtZOOi1nu4Qrj0s8.T7KB9g";
+            String token = request.getSession(false).getAttribute("access_token").toString();
             target = token + ":" + target;
         }
         return movieService.getResourceList(target, config.getResourcePath(), config.getResourceType());
@@ -71,7 +71,7 @@ public class MovieController {
     public ResponseEntity<InputStreamResource> fetchResourceStream() throws IOException, URISyntaxException {
         String target = URLDecoder.decode(request.getRequestURI(), AppConfig.DEFAULT_CHARSET).replace("/stream", "");
         if (config.getResourceBackend().equals("baidupan")) {
-            String token = "121.abdd85946ef7cd33afe4b2bf8e911c11.YgJH9i9PdKPKDxaL9GWYhfvwtZOOi1nu4Qrj0s8.T7KB9g";
+            String token = request.getSession(false).getAttribute("access_token").toString();
             target = token + ":" + target;
         }
         return movieService.getResourceStream(target, config.getResourcePath());
