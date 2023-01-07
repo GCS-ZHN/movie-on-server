@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import lombok.Getter;
+import lombok.Setter;
 import top.gcszhn.movie.AppConfig;
 import top.gcszhn.movie.utils.HttpClientUtils;
 import top.gcszhn.movie.utils.HttpDataPair;
@@ -24,18 +26,18 @@ public class BaiduPanService {
     /**
      * 百度云盘第三方应用AppKey
      */
-    @Value("${baidu.client_id}")
-    private String clientId;
+    @Value("${baidupan.client_id}")
+    private @Getter @Setter String clientId;
     /**
      * 百度云盘第三方应用AppSecret
      */
-    @Value("${baidu.client_secret}")
-    private String clientSecret;
+    @Value("${baidupan.client_secret}")
+    private @Getter @Setter String clientSecret;
     /**
      * 百度云盘第三方应用回调地址
      */
-    @Value("${baidu.redirect_uri}")
-    private String redirectUri;
+    @Value("${baidupan.redirect_url}")
+    private @Getter @Setter String redirectUrl;
     /**
      * 百度云盘第三方应用授权地址
      */
@@ -61,19 +63,27 @@ public class BaiduPanService {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public void authorize() throws IOException, URISyntaxException {
-        URIBuilder builder = new URIBuilder(AUTHORIZE_URL, AppConfig.DEFAULT_CHARSET)
-            .addParameter("response_type", "code")
-            .addParameter("scope", "basic,netdisk")
-            .addParameter("qrcode", "1")
-            .addParameter("client_id", clientId)
-            .addParameter("redirect_uri", redirectUri);
-        String target = builder.build().toString();
+    public void authorize() throws IOException {
+        String target = getAuthURL();
         System. setProperty("java.awt.headless", "false");
         Desktop desktop = Desktop.getDesktop();
         LogUtils.printMessage("Open the following URL and grant access to your account:");
         LogUtils.printMessage(target);
         desktop.browse(URI.create(target));
+    }
+
+    public String getAuthURL() {
+        try {
+            URIBuilder builder = new URIBuilder(AUTHORIZE_URL, AppConfig.DEFAULT_CHARSET)
+            .addParameter("response_type", "code")
+            .addParameter("scope", "basic,netdisk")
+            .addParameter("qrcode", "1")
+            .addParameter("client_id", clientId)
+            .addParameter("redirect_uri", redirectUrl);
+            return builder.toString();
+        } catch (URISyntaxException e) {
+            return null;
+        }
     }
 
     public JSONObject getAccessToken(String code) throws IOException {
@@ -83,7 +93,7 @@ public class BaiduPanService {
                 new BasicNameValuePair("code", code),
                 new BasicNameValuePair("client_id", clientId),
                 new BasicNameValuePair("client_secret", clientSecret),
-                new BasicNameValuePair("redirect_uri", redirectUri)
+                new BasicNameValuePair("redirect_uri", redirectUrl)
             );
             String response = client.doGetText(ACCESS_TOKEN_URL, param);
             return JSONObject.parseObject(response);
