@@ -52,8 +52,15 @@ public class LocalResourceService implements ResourceService {
     @Override
     public ResponseEntity<InputStreamResource> getResourceStream(String target, String resourcePath)
             throws IOException, URISyntaxException {
-        // TODO Auto-generated method stub
-        return null;
+            File file = new File(resourcePath, target);
+            if (!file.exists() || file.isDirectory()) {
+                return null;
+            }
+            return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                .header("Content-Type", "application/octet-stream")
+                .header("Content-Length", String.valueOf(file.length()))
+                .body(new InputStreamResource(Files.newInputStream(file.toPath())));
     }
 
 
