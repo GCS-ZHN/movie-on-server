@@ -62,6 +62,20 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
     @Value("${resource.backend:local}")
     private @Getter String resourceBackend;
 
+    /** 临时文件夹 */
+    private @Getter File tmpDir;
+
+    public AppConfig() {
+        LogUtils.printMessage("AppConfig init", LogUtils.Level.DEBUG);
+        tmpDir = new File(System.getProperty("java.io.tmpdir"), "movie");
+        if (!tmpDir.exists()) {
+            tmpDir.mkdirs();
+        }
+        if (!tmpDir.isDirectory()) {
+            throw new RuntimeException("Failed to create tmp dir: " + tmpDir.getAbsolutePath());
+        }
+    }
+
     @Override
     public void setEnvironment(Environment environment) {
         switch (getResourceBackend()) {
