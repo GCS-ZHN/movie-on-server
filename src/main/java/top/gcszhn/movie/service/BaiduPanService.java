@@ -8,7 +8,9 @@ import java.util.Optional;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSONArray;
@@ -61,6 +63,10 @@ public class BaiduPanService implements AutoCloseable {
      * 百度云盘第三方应用获取文件元信息地址
      */
     private static final String MULTIMEDIA_URL = "https://pan.baidu.com/rest/2.0/xpan/multimedia";
+
+    /**APP配置 */
+    @Autowired
+    private AppConfig appConfig;
 
     /**
      * 调用本地浏览器进行校验码授权，获取授权码
@@ -118,7 +124,12 @@ public class BaiduPanService implements AutoCloseable {
                 });
     }
 
+    @Cacheable(value = "baidupan", key = "#accessToken")
     public JSONObject getUserInfo(String accessToken) throws IOException {
+        appConfig.cleanCache(
+            "baidupan", 
+            accessToken,
+            24 * 60 * 60 * 1000);
         List<NameValuePair> param = List.of(
                 new BasicNameValuePair("method", "uinfo"),
                 new BasicNameValuePair("access_token", accessToken));
@@ -140,10 +151,15 @@ public class BaiduPanService implements AutoCloseable {
      * @return
      * @throws IOException
      */
+    @Cacheable(value = "fileList", key = "#accessToken + ':' + #dir + ':' + #folder + ':' + #start + ':' + #limit")
     public JSONArray getFileList(String accessToken, String dir, boolean folder, int start, int limit) throws IOException {
         if (limit > 1000) {
             limit = 1000;
         }
+        appConfig.cleanCache(
+                "fileList",
+                accessToken + ':' + dir + ':' + folder + ':' + start + ':' + limit,
+                10 * 60 * 1000);
         List<NameValuePair> param = List.of(
                 new BasicNameValuePair("method", "list"),
                 new BasicNameValuePair("access_token", accessToken),
@@ -167,7 +183,12 @@ public class BaiduPanService implements AutoCloseable {
      * @return
      * @throws IOException
      */
+    @Cacheable(value = "fileList", key = "#accessToken + ':' + #dir + ':' + #folder")
     public JSONArray getFileList(String accessToken, String dir, boolean folder) throws IOException {
+        appConfig.cleanCache(
+            "fileList", 
+            accessToken + ":" + dir + ":" + folder,
+            10 * 60 * 1000);
         JSONArray list = new JSONArray();
         while (true) {
             JSONArray temp = getFileList(accessToken, dir, folder, list.size(), 100);
@@ -216,7 +237,12 @@ public class BaiduPanService implements AutoCloseable {
      * @return
      * @throws IOException
      */
+    @Cacheable(value = "fileMetaInfo", key = "#accessToken + ':' + #dir + ':' + #dlink")
     public JSONArray getFileMetaInfoByDir(String accessToken, String dir, boolean dlink) throws IOException {
+        appConfig.cleanCache(
+            "fileMetaInfo", 
+            accessToken + ":" + dir + ":" + dlink, 
+            10 * 60 * 1000);
         Optional<JSONArray> list = Optional.ofNullable(getFileList(accessToken, dir, false));
         return list.map(l -> {
             JSONArray fsids = new JSONArray();
@@ -315,7 +341,12 @@ public class BaiduPanService implements AutoCloseable {
      * @throws IOException
      * @throws URISyntaxException
      */
+    @Cacheable(value = "fileText", key = "#accessToken + ':' + #dlink")
     public String getFileText(String accessToken, String dlink) throws IOException, URISyntaxException {
+        appConfig.cleanCache(
+            "fileText",
+            accessToken + ":" + dlink,
+            10 * 60 * 1000);
         List<NameValuePair> param = List.of(
                 new BasicNameValuePair("access_token", accessToken));
         return client.doGetText(
@@ -329,7 +360,12 @@ public class BaiduPanService implements AutoCloseable {
      * @return 文件列表
      * @throws IOException
      */
+    @Cacheable(value = "onlyFiles", key = "#accessToken + ':' + #dir")
     public JSONArray getOnlyFiles(String accessToken, String dir) throws IOException {
+        appConfig.cleanCache(
+            "onlyFiles",
+            accessToken + ":" + dir,
+            10 * 60 * 1000);
         Optional<JSONArray> list = Optional.ofNullable(getFileList(accessToken, dir, false));
         return list.map(l -> {
             JSONArray files = new JSONArray();

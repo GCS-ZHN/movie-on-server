@@ -33,7 +33,7 @@ public class BaiduPanResourceService implements ResourceService {
         String accessToken = tmps[0];
         target = tmps[1];
         String dir = resourcePath + target;
-        JSONArray files = baiduPanService.getFileMetaInfoByDir(accessToken, dir, false);
+        JSONArray files = baiduPanService.getFileMetaInfoByDir(accessToken, dir, true);
         List<Map<String, String>> movies = new ArrayList<>();
         final SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd HH:mm:sss");
         files.forEach(file -> {
@@ -55,7 +55,7 @@ public class BaiduPanResourceService implements ResourceService {
         });
         return movies;
     }
-
+    
     @Override
     public ResponseEntity<InputStreamResource> getResourceStream(String target, String resourcePath)
             throws IOException, URISyntaxException {

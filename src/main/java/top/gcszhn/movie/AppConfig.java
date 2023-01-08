@@ -23,13 +23,18 @@ import top.gcszhn.movie.service.BaiduPanResourceService;
 import top.gcszhn.movie.service.LocalAuthService;
 import top.gcszhn.movie.service.LocalResourceService;
 import top.gcszhn.movie.service.ResourceService;
+import top.gcszhn.movie.utils.LogUtils;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.charset.Charset;
@@ -38,17 +43,21 @@ import java.util.List;
 
 @Configuration
 public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
-    /**统一字符集 */
+    /** 统一字符集 */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    /**资源路径 */
+    /** 资源路径 */
     private @Getter @Setter String resourcePath;
 
-    /**资源类型 */
+    /** 缓存管理器 */
+    @Autowired
+    private @Getter CacheManager cacheManager;
+
+    /** 资源类型 */
     @Value("#{'${resource.type:mp4}'.split(',')}")
     private @Getter List<String> resourceType;
 
-    /**资源后端 */
+    /** 资源后端 */
     @Value("${resource.backend:local}")
     private @Getter String resourceBackend;
 
@@ -92,6 +101,7 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
 
     /**
      * 配置tomcat的web服务器, 允许RFC 3986的路径中包含特殊字符
+     * 
      * @return
      */
     @Bean
@@ -103,5 +113,27 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
             connector.setProperty("rejectIllegalHeader", "false");
         });
         return factory;
+    }
+
+    @Async
+    public void cleanCache(String cacheName, String key, long delay) {
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache == null) {
+            LogUtils.printMessage(
+                String.format("Cache [%s]/[%s] not found", cacheName, key), LogUtils.Level.INFO);
+            return;
+        }
+        LogUtils.printMessage(
+            String.format("Cache [%s]/[%s] will be cleaned after %dms", cacheName, key, delay), 
+            LogUtils.Level.DEBUG);
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            LogUtils.printMessage(null, e, LogUtils.Level.ERROR);
+        }
+        cache.evict(key);
+        LogUtils.printMessage(
+            String.format("Cache [%s]/[%s] cleaned", cacheName, key),
+            LogUtils.Level.DEBUG);
     }
 }

@@ -23,10 +23,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.ApplicationPidFileWriter;
 import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import top.gcszhn.movie.security.ShaEncrypt;
 
+@EnableAsync
+@EnableCaching
 @SpringBootApplication
 @ServletComponentScan
 public class App implements WebMvcConfigurer {
