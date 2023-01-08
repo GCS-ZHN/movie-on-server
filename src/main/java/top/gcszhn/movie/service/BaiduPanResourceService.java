@@ -1,6 +1,7 @@
 package top.gcszhn.movie.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ public class BaiduPanResourceService implements ResourceService {
 
     @Autowired
     BaiduPanService baiduPanService;
+
+    @Autowired
+    AutoCacheInputService autoCacheInputService;
 
     @Override
     public List<Map<String, String>> getResourceList(String target, String resourcePath, List<String> resoureType)
@@ -63,12 +67,23 @@ public class BaiduPanResourceService implements ResourceService {
         String accessToken = tmps[0];
         target = tmps[1];
         String path = resourcePath + target;
-        HttpDataPair dataPair = baiduPanService.getFileByPath(accessToken, path);
-        if (dataPair != null) {
-            InputStreamResource resource = new InputStreamResource(dataPair.getResponse().getEntity().getContent());
+        InputStream inputStream = autoCacheInputService.getCacheInputStream(path);
+        long contentLength = autoCacheInputService.getCacheSize(path);
+        if (inputStream == null) {
+            HttpDataPair dataPair = baiduPanService.getFileByPath(accessToken, path);
+            if (dataPair != null) {
+                inputStream = dataPair.getResponse().getEntity().getContent();
+                inputStream = autoCacheInputService.createCacheInputStream(inputStream, path, 60 * 60 * 1000);
+                contentLength = dataPair.getResponse().getEntity().getContentLength();
+            }
+        } else {
+            LogUtils.printMessage("Cache hinted for " + path, LogUtils.Level.INFO);
+        }
+        if (inputStream != null) {
+            InputStreamResource resource = new InputStreamResource(inputStream);
             return ResponseEntity.ok()
-                    .header("Content-Type", dataPair.getResponse().getEntity().getContentType().getValue())
-                    .contentLength(dataPair.getResponse().getEntity().getContentLength())
+                    .header("Content-Type", "application/octet-stream")
+                    .contentLength(contentLength)
                     .body(resource);
 
         } else {
