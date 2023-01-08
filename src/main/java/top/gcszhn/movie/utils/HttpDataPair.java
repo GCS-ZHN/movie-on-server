@@ -11,6 +11,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URLDecoder;
 
 @Data
 public class HttpDataPair implements Closeable {
@@ -31,6 +32,8 @@ public class HttpDataPair implements Closeable {
         if (client != null && closeClient) {
             client.close();
         }
-        LogUtils.printMessage("关闭连接" + request.getURI(), LogUtils.Level.DEBUG);
+        LogUtils.printMessage(
+            "Close " + URLDecoder.decode(request.getURI().toString(), "UTF-8"), 
+            LogUtils.Level.DEBUG);
     }
 }
