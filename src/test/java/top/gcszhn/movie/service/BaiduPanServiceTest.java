@@ -3,13 +3,14 @@ package top.gcszhn.movie.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 
 import org.apache.http.HttpStatus;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,8 +49,19 @@ public class BaiduPanServiceTest {
         baiduPanService.setRedirectUrl("oob");
         LogUtils.printMessage("Loading params...");
         // load param from test_params.json file
-        try (InputStream fis = this.getClass().getResourceAsStream("/test_params.json")) {
+        try (FileInputStream fis = new FileInputStream("test_params.json")) {
             this.param = JSONObject.parseObject(fis, Param.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void saveParams() {
+        LogUtils.printMessage("Saving params...");
+        // save param to test_params.json file
+        try (FileWriter fw = new FileWriter("test_params.json")) {
+            fw.write(JSONObject.toJSONString(param, true));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -58,6 +70,7 @@ public class BaiduPanServiceTest {
     @Test
     public void testAuthorize() {
         try {
+            System.setProperty("java.awt.headless", "false");
             baiduPanService.authorize();
         } catch (Exception e) {
             e.printStackTrace();
@@ -106,7 +119,8 @@ public class BaiduPanServiceTest {
             param.accessToken,
             param.dir,
             false);
-
+        assertNotNull(FileList);
+        System.out.println("total: " + FileList.size());
         FileList.forEach(file -> {
             JSONObject fileJson = (JSONObject) file;
             System.out.print(fileJson.getString("server_filename") + "\t");
@@ -134,6 +148,8 @@ public class BaiduPanServiceTest {
             param.accessToken,
             param.dir,
             true);
+        assertNotNull(response);
+        System.out.println("total: " + response.size());
         response.forEach(file -> {
             JSONObject fileJson = (JSONObject) file;
             System.out.print(fileJson.getString("filename") + "\t");
