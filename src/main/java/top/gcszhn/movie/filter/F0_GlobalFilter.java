@@ -41,8 +41,9 @@ public class F0_GlobalFilter extends HttpFilter {
         if (realIP == null || realIP.length() == 0 || "unknown".equalsIgnoreCase(realIP)) {
             realIP = request.getRemoteAddr();
         }
+        String decodeURI = java.net.URLDecoder.decode(request.getRequestURI(), "UTF-8");
         LogUtils.printMessage(String.format("Request for %s from %s [%s]", 
-            request.getRequestURI(), request.getRemoteHost(), realIP));
+            decodeURI, request.getRemoteHost(), realIP));
         super.doFilter(request, response, chain);
     }
 }
