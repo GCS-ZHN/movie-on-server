@@ -20,3 +20,6 @@ server:
 logging:
   level:
     top.gcszhn.movie: info
+
+cache:
+    reserved: false # reserve cache file while quit JVM

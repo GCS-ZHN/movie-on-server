@@ -37,6 +37,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -128,12 +129,16 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
             LogUtils.Level.DEBUG);
         try {
             Thread.sleep(delay);
-        } catch (InterruptedException e) {
+            if (key.startsWith("stream:")) {
+                String path = cache.get(key, String.class);
+                new File(path).delete();
+            }
+            cache.evict(key);
+            LogUtils.printMessage(
+                String.format("Cache [%s]/[%s] cleaned", cacheName, key),
+                LogUtils.Level.DEBUG);
+        } catch (Exception e) {
             LogUtils.printMessage(null, e, LogUtils.Level.ERROR);
         }
-        cache.evict(key);
-        LogUtils.printMessage(
-            String.format("Cache [%s]/[%s] cleaned", cacheName, key),
-            LogUtils.Level.DEBUG);
     }
 }
