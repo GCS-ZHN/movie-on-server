@@ -43,7 +43,13 @@ public class AutoCacheInputStream extends InputStream {
         }
     }
 
-    public void whenClosed(Runnable runnable) {
+    public AutoCacheInputStream whenClosed(Runnable runnable) {
         this.runWhenClosed = runnable;
+        return this;
+    }
+
+    @Override
+    public int available() throws IOException {
+        return in.available();
     }
 }

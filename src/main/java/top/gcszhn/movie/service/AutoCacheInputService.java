@@ -47,8 +47,9 @@ public class AutoCacheInputService {
     public AutoCacheInputStream createCacheInputStream(InputStream in, String path, long expired) throws IOException {
         final String streamKey = "stream:" + path;
         final String realCachePath = createRealCachePath(path);
-        AutoCacheInputStream inputStream = new AutoCacheInputStream(in, realCachePath, reserved);
-        inputStream.whenClosed(()->{
+        @SuppressWarnings("resource")
+        AutoCacheInputStream inputStream = new AutoCacheInputStream(in, realCachePath, reserved)
+        .whenClosed(()->{
             cache.put(streamKey, realCachePath);
             appConfig.cleanCache(cache.getName(), streamKey, expired);
             LogUtils.printMessage("Cached for " + path, LogUtils.Level.INFO);
