@@ -11,8 +11,8 @@ spring:
       matching-strategy: ant_path_matcher
 
 baidupan:
-  client_id: QDLHCW3yN6ShuEiZsnXCibMA2zO6WSOR
-  client_secret: F7lNFueyyc8m9ZfhRklb3TAItBEcrSdt
+  client_id: 你申请到的AppKey
+  client_secret: 您申请到的AppSecret
   redirect_url: http://localhost:8080/auth
 
 server:
