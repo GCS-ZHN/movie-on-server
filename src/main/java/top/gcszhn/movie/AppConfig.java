@@ -62,6 +62,10 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
     @Value("${resource.backend:local}")
     private @Getter String resourceBackend;
 
+    /** 服务器端口 */
+    @Value("${server.port:8080}")
+    private @Getter int port;
+
     /** 临时文件夹 */
     private @Getter File tmpDir;
 
@@ -86,8 +90,10 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
                 setResourcePath(environment.getProperty("resource.path", "/"));
                 break;
             default:
-                throw new RuntimeException("未知的资源后端");
+                throw new RuntimeException("Unknown resource backend");
         }
+        LogUtils.printMessage("Resource path: " + getResourcePath());
+        LogUtils.printMessage("Resource Backend: " + getResourceBackend());
     }
 
     @Bean
@@ -98,7 +104,7 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
             case "baidupan":
                 return new BaiduPanResourceService();
             default:
-                throw new RuntimeException("未知的资源后端");
+                throw new RuntimeException("Unknown resource backend");
         }
     }
 
@@ -110,7 +116,7 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
             case "baidupan":
                 return new BaiduPanAuthService();
             default:
-                throw new RuntimeException("未知的资源后端");
+                throw new RuntimeException("Unknown resource backend");
         }
     }
 
