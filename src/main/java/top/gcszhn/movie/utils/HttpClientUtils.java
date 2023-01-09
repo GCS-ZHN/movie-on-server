@@ -140,6 +140,7 @@ public class HttpClientUtils implements Closeable {
      * @param headers 可选请求头
      * @return 响应实例
      */
+    @SuppressWarnings("resource")
     private HttpDataPair getResponse(HttpRequestBase request, Header... headers) {
         request.setHeaders(headers);
         try  {
