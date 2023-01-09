@@ -13,9 +13,9 @@
  * See the License for the specific language govering permissions and
  * limitations under the License.
  */
-package top.gcszhn.movie;
+package top.gcszhn.movie.utils;
 
-public class AppUtils {
+public class IOUtils {
     /**
      * 可读的文件大小
      * @param size 文件字节大小

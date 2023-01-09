@@ -14,7 +14,7 @@ import java.util.Map;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 
-import top.gcszhn.movie.AppUtils;
+import top.gcszhn.movie.utils.IOUtils;
 
 
 public class LocalResourceService implements ResourceService {
@@ -42,7 +42,7 @@ public class LocalResourceService implements ResourceService {
                 fileInfo.put("name", pathname.getName());
                 fileInfo.put("type", pathname.isDirectory() ? "directory": "file");
                 fileInfo.put("create", dateFormat.format(Files.readAttributes(pathname.toPath(), BasicFileAttributes.class).creationTime().toMillis()));
-                fileInfo.put("size", AppUtils.readableFileSize(pathname.length()));
+                fileInfo.put("size", IOUtils.readableFileSize(pathname.length()));
                 movies.add(fileInfo);
             }
         }
