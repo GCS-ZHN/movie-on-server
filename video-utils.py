@@ -51,7 +51,7 @@ def from_mp4_to_hls(mp4_file_path: str,
         output_file_path = os.path.join(output_file_dir, basename + ".m3u8")
     else:
         output_file_dir = os.path.dirname(output_file_path)
-    os.makedirs(output_file_dir, exist_ok=True, mode=0o755)
+    os.makedirs(output_file_dir, exist_ok=False, mode=0o755)
     print(f"Calculating MD5 of {mp4_file_path}")
     with open(mp4_file_path, "rb") as f:
         md5 = hashlib.md5()
@@ -62,10 +62,10 @@ def from_mp4_to_hls(mp4_file_path: str,
             md5.update(data)
         md5_hex = md5.hexdigest()[:6]
     print(f"Converting {mp4_file_path} to {output_file_path}")
-    output_ts_path = os.path.join(output_file_dir, f"{md5_hex}_%04d.ts")
+    output_ts_path = os.path.join(output_file_dir, f"{md5_hex}_%04d.tsx")
     key_info_str = "" if not key_info else f"-hls_key_info_file {key_info}"
     status = os.system(
-        f"ffmpeg -v {FFMPEG_LOG_LEVEL} -i \"{mp4_file_path}\" -c copy {key_info_str} -hls_time 10 -hls_playlist_type vod -hls_list_size 0 -hls_segment_filename \"{output_ts_path}\" \"{output_file_path}\" "
+        f"ffmpeg -v {FFMPEG_LOG_LEVEL} -i \"{mp4_file_path}\" -crf 22 -preset veryfast -c copy {key_info_str} -hls_time 5 -hls_playlist_type vod -hls_list_size 0 -hls_segment_filename \"{output_ts_path}\" \"{output_file_path}\" "
     )
     if status == 0 and remove_input:
         os.remove(mp4_file_path)
@@ -87,6 +87,29 @@ def remove_hls_segments(m3u8_file_path: str):
     os.remove(m3u8_file_path)
     print(f"Removed HLS {m3u8_file_path} and segments")
 
+def changeSegmentExt(m3u8_file_path: str, old: str, new: str):
+    """Changes HLS segment extension
+
+    Args:
+        m3u8_file_path (str): Path of HLS m3u8 file
+    """
+    output_file_dir = os.path.dirname(m3u8_file_path)
+    if old == new:
+        return
+    if not old.startswith("."):
+        old = "." + old
+    if not new.startswith("."):
+        new = "." + new
+    with open(m3u8_file_path, "r") as f, open(m3u8_file_path + ".tmp", "w") as f2:
+        for line in f:
+            line = line.rstrip()
+            if line.endswith(old):
+                os.rename(os.path.join(output_file_dir, line), os.path.join(output_file_dir, line.removesuffix(old) + new))
+                line = line.removesuffix(old) + new
+            f2.write(line + "\n")
+    print(f"Changed HLS {m3u8_file_path} segment extension from {old} to {new}")
+    os.remove(m3u8_file_path)
+    os.rename(m3u8_file_path + ".tmp", m3u8_file_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -116,10 +139,19 @@ if __name__ == "__main__":
         help=
         "Key info file path for HLS encrpted, Only valid for mp4 to hls conversion, Default: None"
     )
+    parser.add_argument("--change-segment-ext",
+                        "-c",
+                        type=str,
+                        default=None,
+                        help="Change segment extension")
     args = parser.parse_args()
     if os.path.isfile(args.input):
         if args.input.endswith(".m3u8"):
-            from_hls_to_mp4(args.input, args.output, args.remove_input)
+            if args.change_segment_ext:
+                old, new = args.change_segment_ext.split(":")
+                changeSegmentExt(args.input, old, new)
+            else:
+                from_hls_to_mp4(args.input, args.output, args.remove_input)
         elif args.input.endswith(".mp4"):
             from_mp4_to_hls(args.input, args.output, args.remove_input,
                             args.key_info)
@@ -136,6 +168,10 @@ if __name__ == "__main__":
             if args.glob_type == "mp4":
                 from_mp4_to_hls(file_path, None, args.remove_input, args.key_info)
             elif args.glob_type == "m3u8":
-                from_hls_to_mp4(file_path, None, args.remove_input)
+                if args.change_segment_ext:
+                    old, new = args.change_segment_ext.split(":")
+                    changeSegmentExt(args.input, old, new)
+                else:
+                    from_hls_to_mp4(file_path, None, args.remove_input)
     else:
         print("Invalid input path")
