@@ -16,6 +16,7 @@
 package top.gcszhn.movie.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,10 +24,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import top.gcszhn.movie.AppConfig;
 import top.gcszhn.movie.service.ResourceService;
+import top.gcszhn.movie.utils.LogUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.*;
@@ -34,17 +38,17 @@ import java.util.*;
 
 @RestController
 public class MovieController {
+    @Value("${resource.crypt.key_file_path:default}")
+    private String keyFilePath;
+
     @Autowired
-    AppConfig config;
+    private AppConfig config;
 
     @Autowired  
-    HttpServletRequest request;
+    private HttpServletRequest request;
 
     @Autowired
-    HttpServletResponse response;
-
-    @Autowired
-    ResourceService movieService;
+    private ResourceService movieService;
 
     /**
      * 获取电影列表
@@ -75,5 +79,25 @@ public class MovieController {
             target = token + ":" + target;
         }
         return movieService.getResourceStream(target, config.getResourcePath());
+    }
+
+    /**
+     * 返回HLS加密密钥文件
+     * @return
+     * @throws IOException
+     */
+    @GetMapping("/hlskey")
+    public ResponseEntity<byte[]> fetchHlsKey() throws IOException {
+        final InputStream inputStream;
+        if (keyFilePath == null || keyFilePath.equals("default")) {
+            inputStream = getClass().getResourceAsStream("/hls.key");
+            LogUtils.printMessage("Get default hls key", LogUtils.Level.DEBUG);
+        } else {
+            inputStream = new FileInputStream(keyFilePath);
+            LogUtils.printMessage("Get hls key from " + keyFilePath, LogUtils.Level.DEBUG);
+        }
+        try (inputStream) {
+            return ResponseEntity.ok().body(inputStream.readAllBytes());
+        }
     }
 }

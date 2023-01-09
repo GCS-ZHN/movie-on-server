@@ -2,6 +2,8 @@ resource:
   path: /
   type: "m3u8"
   backend: baidupan
+  crypt:
+    key_file_path: default
 
 spring:
   mvc:
