@@ -1,8 +1,27 @@
 resource:
-  path: "."
-  type: "mp4,avi,m3u8,mp3"
+  path: /
+  type: "m3u8"
+  backend: baidupan
+  crypt:
+    key_file_path: default
 
 spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+
+baidupan:
+  client_id: 你申请到的AppKey
+  client_secret: 您申请到的AppSecret
+  redirect_url: http://localhost:8080/auth
+
+server:
+  port: 8080
+  address: localhost
+
+logging:
+  level:
+    top.gcszhn.movie: info
+
+cache:
+    reserved: false # reserve cache file while quit JVM

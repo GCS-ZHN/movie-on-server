@@ -16,14 +16,20 @@
 package top.gcszhn.movie.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.*;
-import top.gcszhn.movie.security.RSAEncrypt;
-import top.gcszhn.movie.security.ShaEncrypt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import top.gcszhn.movie.AppConfig;
+import top.gcszhn.movie.service.AuthService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -34,63 +40,57 @@ public class AuthController {
     @Autowired
     HttpServletResponse response;
 
-    @Value("#{'${passwd:}'.split(':')}")
-    private String[] passwd;
+    @Autowired
+    AuthService authService;
+
+    @Autowired
+    AppConfig appConfig;
 
     /**
-     * 登录验证
+     * 登录POST验证，用于Local登录
      * @param params 登录token
      * @return 登录结果
      */
     @PostMapping("auth")
     Map<String, String> auth(@RequestBody Map<String, String> params) {
-        try {
-            final HttpSession session = request.getSession(false);
-            if (session == null) {
-                request.getSession().setAttribute("online", true);
-                return Map.of("status", "2", "message", "非法请求");
-            } else if (session.getAttribute("online") != null) {
-                return Map.of("status", "0", "message", "已经登录或不用密码");
-            } else if (session.getAttribute("key") != null) {
-                final String token = params.get("token");
-                if (token == null) {
-                    return Map.of("status", "3", "message", "没有提供token");
-                }
-                String pwd = RSAEncrypt.decryptToString(token, ((String[]) session.getAttribute("key"))[0]);
-                if (ShaEncrypt.encrypt(pwd, passwd[1]).equals(passwd[2])) {
-                    session.setAttribute("online", true);
-                    session.removeAttribute("key");
-                    return Map.of("status", "0", "message", "登录成功");
-                } else {
-                    return Map.of("status", "1", "message", "无效token");
-                }
-            } {
-                return Map.of("status", "2", "message", "非法请求");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            Map.of("status", "2", "message", "非法请求");
         }
-        return Map.of("status", "1", "message", "登录失败，原因不明");
+        return authService.auth(session, params);
+    }
+
+    /**
+     * 登录GET验证，用于百度网盘登录
+     * @param code 百度网盘授权码
+     * @return 登录结果
+     * @throws IOException
+     */
+    @GetMapping("auth")
+    Map<String, String> auth(String code) throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null||code==null||code.isEmpty()
+            ||appConfig.getResourceBackend().equals("local")) {
+            Map.of("status", "2", "message", "非法请求");
+        }
+        Map<String, String> res = authService.auth(session, Map.of("code", code));
+        if (res.get("status").equals("0")) {
+            response.sendRedirect("/home.html");
+        }
+        return res;
     }
 
     /**
      * 获取RSA加密公钥，同时也是对免密码登录的验证
      * @return 公钥
      */
-    @GetMapping("key")
-    Map<String, String> getKey() {
-        final HttpSession session = request.getSession();
-        if (passwd[0].equals("")) {
-            session.setAttribute("online", true);
-        }
-        
-        if (session.getAttribute("online")!=null) {
-            return Map.of("status", "1", "message", "已经登录或不用密码");
-        } else {
-            String[] keys = new String[2];
-            RSAEncrypt.generateKeyPair(keys);
-            session.setAttribute("key", keys);
-            return Map.of("status", "0", "message", keys[1]);
-        }
+    @GetMapping("preauth")
+    Map<String, String> preauth() {
+        HttpSession session = request.getSession();
+        session.setMaxInactiveInterval(24 * 60 * 60);
+        Map<String, String> res = authService.preauth(session);
+        Map<String, String> update = new HashMap<>(res);
+        update.put("backend", appConfig.getResourceBackend());;
+        return update;
     }
 }

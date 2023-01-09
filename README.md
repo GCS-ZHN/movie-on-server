@@ -1,5 +1,5 @@
 # movie-server
-一个自建视频网站的工具，此项目为后端项目，基于springboot构建。前端项目参见[GCS-ZHN/movie-web](https://github.com/GCS-ZHN/movie-web)。为了部署方便，前端静态资源已经构建打包在本项目中。
+一个自建视频网站的工具，此项目为后端项目，基于springboot构建。前端项目参见[GCS-ZHN/movie-web](https://github.com/GCS-ZHN/movie-web)。为了部署方便，前端静态资源已经构建打包在本项目中。支持使用百度网盘作为数据后端。
 
 ## 适合场景
 视频源在国外等低速访问网站，而本地缓存空间不足或本地观看不便携带。又因为一些资源的私密性等原因不想传到百度云等公共云盘上。
@@ -9,11 +9,14 @@
 - ffmpeg 用于转码脚本，非刚需
 
 ## 使用方法
-
+### 本地资源后端
+用户可以使用本地资源作为数据后端，使用方法如下
 ```bash
 java -jar movie-XXX.jar \
 --passwd=生成的SHA256加密密码 \
 --resource.path=资源的绝对路径目录 \
+--resource.backend=local \
+--resource.type=m3u8,mp4
 ```
 上述两个参数为可选参数，指定密码时需要安全验证。不指定资源路径时，默认为程序运行时路径为根目录。密码需要通过下列方式生成
 
@@ -51,6 +54,23 @@ services:
       --server.port=8080
       --server.address=0.0.0.0
 ```
+
+### 百度网盘后端
+视频是一个占内存的资源，没有充足容量的情况下，可以考虑将m3u8 HLS视频格式上传到百度网盘，
+本应用支持设置百度网盘后端。首先根据[百度官方文档](https://pan.baidu.com/union/doc/fl0hhnulu)创建自己的百度网盘第三方应用，获得AppKey等信息。然后如下配置启动参数。
+```bash
+java -jar movie-XXX.jar \
+--resource.path=/ \
+--resource.backend=baidupan \
+--resource.type=m3u8 \
+--baidupan.client_id=你申请到的AppKey \
+--baidupan.client_secret=您申请到的AppSecret \
+--baidupan.redirect_url=http://你的主机域名:8080/auth
+```
+为了安全，百度要求上述redirect_url需要在百度上进行登记，参见[文档](https://pan.baidu.com/union/doc/Vl19c4jnx)。
+然后就能正常使用了，页面会自动跳转要求登录百度网盘（理论上可以将地址贡献给别人，大家各自登录自己账号，如果有带宽够的服务器资源的话）。
+
+**注意**：百度网盘对大文件不友好，因此暂时只能支持m3u8视频流，不能使用mp4。
 
 ## 支持的视频
 - mp4

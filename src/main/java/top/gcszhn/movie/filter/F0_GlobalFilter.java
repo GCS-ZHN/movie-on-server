@@ -21,6 +21,9 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import top.gcszhn.movie.utils.LogUtils;
+
 import java.io.IOException;
 
 /**
@@ -30,11 +33,17 @@ import java.io.IOException;
 public class F0_GlobalFilter extends HttpFilter {
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-//        response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-//        response.addHeader("Access-Control-Allow-Credentials", "true");
-//        response.setHeader("Access-Control-Allow-Methods", "POST, GET, PATCH, DELETE, PUT");
-//        response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, X-XSRF-TOKEN, Authorization");
-        System.out.println(request.getRequestURI());
+        // response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+        // response.addHeader("Access-Control-Allow-Credentials", "true");
+        // response.setHeader("Access-Control-Allow-Methods", "POST, GET, PATCH, DELETE, PUT");
+        // response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, X-XSRF-TOKEN, Authorization");
+        String realIP = request.getHeader("X-Real-IP");
+        if (realIP == null || realIP.length() == 0 || "unknown".equalsIgnoreCase(realIP)) {
+            realIP = request.getRemoteAddr();
+        }
+        String decodeURI = java.net.URLDecoder.decode(request.getRequestURI(), "UTF-8");
+        LogUtils.printMessage(String.format("Request for %s from %s [%s]", 
+            decodeURI, request.getRemoteHost(), realIP));
         super.doFilter(request, response, chain);
     }
 }

@@ -22,19 +22,36 @@ import javax.servlet.http.HttpFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import top.gcszhn.movie.utils.LogUtils;
+
 import java.io.IOException;
 
 /**
  * 过滤未经授权登录的请求
  */
-@WebFilter(urlPatterns = {"/query/*", "/static/*"})
+@WebFilter(urlPatterns = {"/query/*", "/stream/*", "/", "/index.html"})
 public class F1_AuthFilter extends HttpFilter {
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("online")==null) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "请先登录");
-            return;
+        boolean isOnline = session != null && session.getAttribute("online") != null;
+        switch (request.getRequestURI()) {
+            case "/":
+            case "/index.html":
+                if (isOnline) {
+                    LogUtils.printMessage("Redirecting to /home.html");
+                    response.sendRedirect("/home.html");
+                    return;
+                }
+                break;
+            default:
+                if (!isOnline) {
+                    LogUtils.printMessage("Sending 403");
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "请先登录");
+                    return;
+                }
+                break;
         }
         super.doFilter(request, response, chain);
     }
