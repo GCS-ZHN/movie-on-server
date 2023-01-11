@@ -78,6 +78,7 @@ public class AppConfig implements WebMvcConfigurer, EnvironmentAware {
         if (!tmpDir.isDirectory()) {
             throw new RuntimeException("Failed to create tmp dir: " + tmpDir.getAbsolutePath());
         }
+        LogUtils.printMessage("App tmpdir: " + tmpDir.getAbsolutePath(), LogUtils.Level.DEBUG);
     }
 
     @Override
