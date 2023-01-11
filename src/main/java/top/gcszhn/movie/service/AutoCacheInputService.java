@@ -2,6 +2,7 @@ package top.gcszhn.movie.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -46,29 +47,44 @@ public class AutoCacheInputService {
      */
     public AutoCacheInputStream createCacheInputStream(InputStream in, String path, long expired) throws IOException {
         final String streamKey = "stream:" + path;
+        if (cache.get(streamKey, String.class) != null) {
+            LogUtils.printMessage("Cache item existed", LogUtils.Level.ERROR);
+            return null;
+        }
+        final String statusKey = "status:" + path;
         final String realCachePath = createRealCachePath(path);
-        @SuppressWarnings("resource")
-        AutoCacheInputStream inputStream = new AutoCacheInputStream(in, realCachePath, reserved)
-        .whenClosed(()->{
-            cache.put(streamKey, realCachePath);
+        cache.put(streamKey, realCachePath);
+        AutoCacheInputStream inputStream = new AutoCacheInputStream(in, realCachePath, reserved);
+        inputStream.whenClosed(()->{
+            // 通知其他线程缓存完成，可以读取
+            synchronized(inputStream) {
+                inputStream.notifyAll();
+            }
             appConfig.cleanCache(cache.getName(), streamKey, expired);
+            appConfig.cleanCache(cache.getName(), statusKey, expired);
             LogUtils.printMessage("Cached for " + path, LogUtils.Level.INFO);
         });
+        cache.put(statusKey, inputStream);
         return inputStream;
     }
 
     /**
      * 获取本地缓存
-     * @param key
+     * @param path
      * @return
-     * @throws IOException
      */
-    public InputStream getCacheInputStream(String key) throws IOException {
-        String realCachePath = cache.get("stream:" + key, String.class);
+    public InputStream getCacheInputStream(String path) {
+        waitFor(path);
+        String realCachePath = cache.get("stream:" + path, String.class);
         if (realCachePath == null||!new File(realCachePath).exists()) {
             return null;
         }
-        return new FileInputStream(realCachePath);
+        try {
+            return new FileInputStream(realCachePath);
+        } catch (FileNotFoundException e) {
+            LogUtils.printMessage(null, e, LogUtils.Level.ERROR);
+        }
+        return null;
     }
 
     /**
@@ -77,6 +93,7 @@ public class AutoCacheInputService {
      * @return 缓存大小，单位字节
      */
     public long getCacheSize(String path) {
+        waitFor(path);
         String realCachePath = cache.get("stream:" + path, String.class);
         if (realCachePath == null) {
             return 0;
@@ -91,5 +108,25 @@ public class AutoCacheInputService {
     private String createRealCachePath(String path) {
         path = path.replace("/", "_").replace("\\", "_");
         return new File(appConfig.getTmpDir(), path).getAbsolutePath();
+    }
+
+    /**
+     * 等待缓存完毕
+     * @param path
+     */
+    public void waitFor(String path) {
+        AutoCacheInputStream inputStream = cache.get("status:" + path, AutoCacheInputStream.class);
+        if (inputStream != null) {
+            synchronized(inputStream) {
+                while (!inputStream.isClosed()) {
+                    try {
+                        LogUtils.printMessage("Waiting for cache " + path, LogUtils.Level.INFO);
+                        inputStream.wait();
+                    } catch (InterruptedException e) {
+                        LogUtils.printMessage(null, e, LogUtils.Level.ERROR);
+                    }
+                }
+            }
+        }
     }
 }

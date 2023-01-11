@@ -16,6 +16,9 @@ public class AutoCacheInputServiceTest extends AppTest {
     @Autowired
     AutoCacheInputService autoCacheInputService;
 
+    @Autowired
+    AsyncService asyncService;
+
     @After
     public void after() throws Exception {
         Thread.sleep(7000);
@@ -26,11 +29,16 @@ public class AutoCacheInputServiceTest extends AppTest {
         FileInputStream fis = new FileInputStream("test_params.json");
         AutoCacheInputStream acis = autoCacheInputService.createCacheInputStream(
             fis, "test_cache_params.json", 5000);
-        try (acis) {
-            System.out.println(new String(acis.readAllBytes()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        asyncService.run(()->{
+            try (acis) {
+                Thread.sleep(3000);
+                System.out.println(new String(acis.readAllBytes()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        autoCacheInputService.waitFor("test_cache_params.json");
+        System.out.println("Cache created");
     }
 
     @Test
