@@ -4,15 +4,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.Getter;
 
 public class AutoCacheInputStream extends InputStream {
-
+    /**缓存输出 */
     FileOutputStream fos;
+    /**输入 */
     InputStream in;
+    /**流是否被关闭 */
     private @Getter boolean closed = false;
-    private Runnable runWhenClosed = null;
+    /**流结束是的回调 */
+    private List<Runnable> runWhenCloses = new ArrayList<>();
 
     public AutoCacheInputStream(InputStream in, String path, boolean reserved) throws IOException {
         super();
@@ -38,13 +43,13 @@ public class AutoCacheInputStream extends InputStream {
         fos.close();
         in.close();
         closed = true;
-        if (runWhenClosed != null) {
+        for (Runnable runWhenClosed : runWhenCloses) {
             runWhenClosed.run();
         }
     }
 
     public AutoCacheInputStream whenClosed(Runnable runnable) {
-        this.runWhenClosed = runnable;
+        this.runWhenCloses.add(runnable);
         return this;
     }
 
