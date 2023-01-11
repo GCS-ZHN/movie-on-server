@@ -73,7 +73,7 @@ public class MovieController {
      */
     @GetMapping("/stream/**")
     public ResponseEntity<InputStreamResource> fetchResourceStream() throws IOException, URISyntaxException {
-        String target = URLDecoder.decode(request.getRequestURI(), AppConfig.DEFAULT_CHARSET).replace("/stream", "");
+        String target = URLDecoder.decode(request.getRequestURI(), AppConfig.DEFAULT_CHARSET).replace("/stream/", "");
         if (config.getResourceBackend().equals("baidupan")) {
             String token = request.getSession(false).getAttribute("access_token").toString();
             target = token + ":" + target;
