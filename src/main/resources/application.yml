@@ -9,6 +9,11 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+  task:
+    execution:
+      pool:
+        queueCapacity: 4
+        coreSize: 20
 
 baidupan:
   client_id: 你申请到的AppKey
