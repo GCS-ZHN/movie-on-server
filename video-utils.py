@@ -7,6 +7,11 @@ import shutil
 
 FFMPEG_LOG_LEVEL = "error"
 
+def removesuffix(self: str, suffix):
+    if suffix and self.endswith(suffix):
+        return self[:-len(suffix)]
+    return self
+
 
 def from_hls_to_mp4(m3u8_file_path: str,
                     output_file_path=None,
@@ -18,10 +23,10 @@ def from_hls_to_mp4(m3u8_file_path: str,
         output_file_path (str): Path of output mp4 file
     """
     if not output_file_path:
-        output_file_path = m3u8_file_path.removesuffix(".m3u8") + ".mp4"
+        output_file_path = removesuffix(m3u8_file_path, ".m3u8") + ".mp4"
     output_file_dir = os.path.dirname(output_file_path)
     if output_file_dir.endswith(".hls"):
-        output_file_path = output_file_dir.removesuffix(".hls") + ".mp4"
+        output_file_path = removesuffix(output_file_dir, ".hls") + ".mp4"
     print(f"Converting {m3u8_file_path} to {output_file_path}")
     status = os.system(
         f"ffmpeg -v {FFMPEG_LOG_LEVEL} -i \"{m3u8_file_path}\" -c copy \"{output_file_path}\""
@@ -35,7 +40,7 @@ def from_hls_to_mp4(m3u8_file_path: str,
 
 
 def from_mp4_to_hls(mp4_file_path: str,
-                    output_file_path=None,
+                    output_file_path: str = None,
                     remove_input=False,
                     key_info=None):
     """Converts mp4 file to ts segments
@@ -45,7 +50,7 @@ def from_mp4_to_hls(mp4_file_path: str,
         output_file_path (str): Path of output HLS m3u8 file
     """
     if not output_file_path:
-        output_file_dir = mp4_file_path.removesuffix(".mp4")
+        output_file_dir = removesuffix(mp4_file_path, ".mp4")
         basename = os.path.basename(output_file_dir)
         output_file_dir += ".hls"
         output_file_path = os.path.join(output_file_dir, basename + ".m3u8")
@@ -65,7 +70,7 @@ def from_mp4_to_hls(mp4_file_path: str,
     output_ts_path = os.path.join(output_file_dir, f"{md5_hex}_%04d.tsx")
     key_info_str = "" if not key_info else f"-hls_key_info_file {key_info}"
     status = os.system(
-        f"ffmpeg -v {FFMPEG_LOG_LEVEL} -i \"{mp4_file_path}\" -crf 22 -preset veryfast -c copy {key_info_str} -hls_time 5 -hls_playlist_type vod -hls_list_size 0 -hls_segment_filename \"{output_ts_path}\" \"{output_file_path}\" "
+        f"ffmpeg -v {FFMPEG_LOG_LEVEL} -i \"{mp4_file_path}\" -crf 22 -preset veryfast -c copy {key_info_str} -hls_time 10 -hls_playlist_type vod -hls_list_size 0 -hls_segment_filename \"{output_ts_path}\" \"{output_file_path}\" "
     )
     if status == 0 and remove_input:
         os.remove(mp4_file_path)
@@ -87,6 +92,7 @@ def remove_hls_segments(m3u8_file_path: str):
     os.remove(m3u8_file_path)
     print(f"Removed HLS {m3u8_file_path} and segments")
 
+
 def changeSegmentExt(m3u8_file_path: str, old: str, new: str):
     """Changes HLS segment extension
 
@@ -100,16 +106,22 @@ def changeSegmentExt(m3u8_file_path: str, old: str, new: str):
         old = "." + old
     if not new.startswith("."):
         new = "." + new
-    with open(m3u8_file_path, "r") as f, open(m3u8_file_path + ".tmp", "w") as f2:
+    with open(m3u8_file_path, "r") as f, open(m3u8_file_path + ".tmp",
+                                              "w") as f2:
         for line in f:
             line = line.rstrip()
             if line.endswith(old):
-                os.rename(os.path.join(output_file_dir, line), os.path.join(output_file_dir, line.removesuffix(old) + new))
-                line = line.removesuffix(old) + new
+                os.rename(
+                    os.path.join(output_file_dir, line),
+                    os.path.join(output_file_dir,
+                                 removesuffix(line, old) + new))
+                line = removesuffix(line, old) + new
             f2.write(line + "\n")
-    print(f"Changed HLS {m3u8_file_path} segment extension from {old} to {new}")
+    print(
+        f"Changed HLS {m3u8_file_path} segment extension from {old} to {new}")
     os.remove(m3u8_file_path)
     os.rename(m3u8_file_path + ".tmp", m3u8_file_path)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -166,7 +178,8 @@ if __name__ == "__main__":
             if not file_path.endswith(args.glob_type):
                 continue
             if args.glob_type == "mp4":
-                from_mp4_to_hls(file_path, None, args.remove_input, args.key_info)
+                from_mp4_to_hls(file_path, None, args.remove_input,
+                                args.key_info)
             elif args.glob_type == "m3u8":
                 if args.change_segment_ext:
                     old, new = args.change_segment_ext.split(":")
