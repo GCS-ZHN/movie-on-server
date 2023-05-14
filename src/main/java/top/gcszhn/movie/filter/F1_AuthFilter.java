@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  * 过滤未经授权登录的请求
  */
-@WebFilter(urlPatterns = {"/query/*", "/stream/*", "/", "/index.html"})
+@WebFilter(urlPatterns = {"/query/*", "/stream/*", "/", "/index.html", "/home.html"})
 public class F1_AuthFilter extends HttpFilter {
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -47,8 +47,8 @@ public class F1_AuthFilter extends HttpFilter {
                 break;
             default:
                 if (!isOnline) {
-                    LogUtils.printMessage("Sending 403");
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "请先登录");
+                    LogUtils.printMessage("Redirecting to /");
+                    response.sendRedirect("/");
                     return;
                 }
                 break;
